@@ -28,14 +28,18 @@ except Exception as e:
     print(f"Error during authentication: {e}")
     sys.exit(1)
 
-faucet_user = api.get_user('trbfaucet')
+def get_mentions(label: str, from_date: int, api: tweepy.API, username: str) -> list:
+    """Get mentions of a user since a given date."""
+    # convert from_date timestamp to format required by Twitter API 'yyyyMMddHHmm'
+    from_date = time.strftime('%Y%m%d%H%M', time.gmtime(from_date))
+    query = f"to:{username}"
+    mentions = api.search_30_day(label=label, query=query, fromDate=from_date)
+    return mentions
 
 yesterday_timestamp = int(time.time()) - 86400
-# get mentions since yesterday
-mentions = faucet_user.mentions_timeline(since_id=yesterday_timestamp)
-
-# filter out invalid mentions
-valid_mentions = []
+mentions = get_mentions(username="trbfaucet", label="faucettest", api=api, from_date=yesterday_timestamp)
 for mention in mentions:
-    print("Mention from @{}: {}".format(mention.user.screen_name, mention.text))
-    print("__________________")
+    if isinstance(mention, tweepy.models.Status):
+        print("From: ", mention.user.screen_name)
+        print(mention.text)
+
