@@ -30,8 +30,6 @@ def run():
 
                 new_mentions.append(mention)
                 checked_mentions.add(mention.id)
-
-                print("From: ", mention.user.screen_name)
         
         faucet_requests = get_networks_and_addresses(new_mentions)
         print("Faucet requests:", faucet_requests)

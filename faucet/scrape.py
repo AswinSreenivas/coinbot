@@ -61,7 +61,7 @@ def get_networks_and_addresses(mentions: list) -> list:
     networks_and_addresses = []
     for mention in mentions:
         parsed = parse_mention_text(mention.text)
-        if parsed:
+        if parsed is not None and None not in parsed:
             networks_and_addresses.append(parsed)
     
     return networks_and_addresses
