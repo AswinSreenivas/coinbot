@@ -8,6 +8,8 @@ import os
 from dotenv import load_dotenv
 import sys
 from typing import Optional
+from eth_utils import is_address
+from constants import SUPPORTED_CHAINS
 
 load_dotenv()
 
@@ -34,24 +36,24 @@ def get_mentions(label: str, from_date: int, api: tweepy.API, username: str) -> 
     """Get mentions of a user since a given date."""
     # convert from_date timestamp to format required by Twitter API 'yyyyMMddHHmm'
     from_date = time.strftime('%Y%m%d%H%M', time.gmtime(from_date))
-    query = f"to:{username}"
+    query = f"@{username}"
     mentions = api.search_30_day(label=label, query=query, fromDate=from_date)
     return mentions
 
 
 def parse_mention_text(text: str) -> Optional[tuple]:
     """Parse mention text to get chain id and address."""
+    print("Parsing mention text...")
     chain_id = None
     address = None
     for word in text.split():
-        if word.startswith("0x"):
+        if is_address(word):
             address = word
-        elif word.isdigit():
-            chain_id = int(word)
+            continue
+        if word.isdigit():
+            chain_id = int(word) if int(word) in SUPPORTED_CHAINS else None
 
-    if chain_id and address:
-        return chain_id, address
-    return None
+    return chain_id, address if chain_id and address else None
 
 
 def get_networks_and_addresses(mentions: list) -> list:

@@ -12,4 +12,4 @@ Send testnet tokens to address on a supported chain.
 
 def send_tokens(network: int, address: str) -> bool:
     """Send tokens to address on a supported chain."""
-    return True
+    return True if network and address else False
