@@ -7,6 +7,7 @@ import time
 import os
 from dotenv import load_dotenv
 import sys
+from typing import Optional
 
 load_dotenv()
 
@@ -19,14 +20,15 @@ auth.set_access_token(
     os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
 )
 
-api = tweepy.API(auth)
+TWEEPY_API = tweepy.API(auth)
 
 try:
-    api.verify_credentials()
+    TWEEPY_API.verify_credentials()
     print("Authentication OK")
 except Exception as e:
     print(f"Error during authentication: {e}")
     sys.exit(1)
+
 
 def get_mentions(label: str, from_date: int, api: tweepy.API, username: str) -> list:
     """Get mentions of a user since a given date."""
@@ -36,17 +38,28 @@ def get_mentions(label: str, from_date: int, api: tweepy.API, username: str) -> 
     mentions = api.search_30_day(label=label, query=query, fromDate=from_date)
     return mentions
 
-yesterday_timestamp = int(time.time()) - 86400
-mentions = get_mentions(username="trbfaucet", label="faucettest", api=api, from_date=yesterday_timestamp)
-for mention in mentions:
-    if isinstance(mention, tweepy.models.Status):
-        print("From: ", mention.user.screen_name)
-        print(mention.text)
+
+def parse_mention_text(text: str) -> Optional[tuple]:
+    """Parse mention text to get chain id and address."""
+    chain_id = None
+    address = None
+    for word in text.split():
+        if word.startswith("0x"):
+            address = word
+        elif word.isdigit():
+            chain_id = int(word)
+
+    if chain_id and address:
+        return chain_id, address
+    return None
 
 
-# filter out previous mentions using tweet id
-
-
-def get_networks_and_addresses(mentions: list) -> dict:
+def get_networks_and_addresses(mentions: list) -> list:
     """Get networks and addresses from mentions."""
-    pass
+    networks_and_addresses = []
+    for mention in mentions:
+        parsed = parse_mention_text(mention.text)
+        if parsed:
+            networks_and_addresses.append(parsed)
+    
+    return networks_and_addresses
