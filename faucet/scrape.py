@@ -43,3 +43,10 @@ for mention in mentions:
         print("From: ", mention.user.screen_name)
         print(mention.text)
 
+
+# filter out previous mentions using tweet id
+
+
+def get_networks_and_addresses(mentions: list) -> dict:
+    """Get networks and addresses from mentions."""
+    pass
