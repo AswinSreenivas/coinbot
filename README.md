@@ -8,3 +8,6 @@ mention @trb-faucet on twitter with a network &amp; address, then receive test T
 - install dependencies `pip install -r requirements.txt`
 - create a twitter app and get the keys
 - copy and rename `.env.example` to `.env` and fill in the keys
+
+# Run
+- `python faucet/main.py`
