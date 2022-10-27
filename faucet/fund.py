@@ -10,6 +10,9 @@ from telliot_core.directory import contract_directory
 from telliot_core.directory import ContractInfo
 from telliot_core.contract.contract import Contract
 from telliot_core.model.endpoints import RPCEndpoint, EndpointList
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 logger = Logger(__name__)
@@ -23,8 +26,8 @@ logger = Logger(__name__)
 
 def get_playground_contract_info(chain_id: int) -> Optional[ContractInfo]:
     """Get playground contract instance for given chain id."""
-    contract = contract_directory.find(name="tellor-playground", chain_id=chain_id)
-    return contract
+    contract_info = contract_directory.find(name="playground", chain_id=chain_id)
+    return contract_info[0] if contract_info else None
 
 
 def get_rpc_endpoint(chain_id: int) -> Optional[RPCEndpoint]:
@@ -39,7 +42,7 @@ def get_rpc_endpoint(chain_id: int) -> Optional[RPCEndpoint]:
 def get_playground_contract(chain_id: int, contract_info: ContractInfo, node: RPCEndpoint) -> Contract:
     """Get playground contract instance for given chain id."""
     c = Contract(
-        address = contract_info[chain_id].address,
+        address = contract_info.address[chain_id],
         abi = contract_info.get_abi(),
         node = node,
     )
@@ -47,9 +50,9 @@ def get_playground_contract(chain_id: int, contract_info: ContractInfo, node: RP
 
 
 
-def send_tokens(chain_id: int, address: str, log: Callable = logger.error) -> bool:
+async def send_tokens(chain_id: int, address: str, log: Callable = logger.error) -> bool:
     """Send tokens to address on a supported chain."""
-    contract_info = get_playground_contract_info(chain_id)[0]
+    contract_info = get_playground_contract_info(chain_id)
     if not contract_info:
         log(f"No playground contract info found for chain id: {chain_id}")
         return False
@@ -59,11 +62,11 @@ def send_tokens(chain_id: int, address: str, log: Callable = logger.error) -> bo
         log(f"No RPC endpoint found for chain id: {chain_id}")
         return False
     
-    contract = get_playground_contract(contract_info, endpoint)
+    contract = get_playground_contract(chain_id, contract_info, endpoint)
     contract.connect()
     if not contract:
         log(f"Unable to instantiate playground contract for chain id: {chain_id}")
         return False
     
-    contract.mint(address)
+    await contract.write("faucet", address)
     return True
