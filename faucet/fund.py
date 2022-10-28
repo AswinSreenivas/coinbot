@@ -68,5 +68,10 @@ async def send_tokens(chain_id: int, address: str, log: Callable = logger.error)
         log(f"Unable to instantiate playground contract for chain id: {chain_id}")
         return False
     
-    await contract.write("faucet", address)
+    tx_receipt, status = await contract.write("faucet", address)
+    if not status.ok or not tx_receipt:
+        log(f"Unable to send tokens to address: {address} on chain id: {chain_id}")
+        return False
+
+    log(f"Sent tokens to address: {address} on chain id: {chain_id}")
     return True
