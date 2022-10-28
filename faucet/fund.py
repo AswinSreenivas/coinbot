@@ -17,11 +17,10 @@ load_dotenv()
 
 logger = Logger(__name__)
 
-# make Contract instance of playground contract using the given chain id and env address w/ funds on every supported chain
-# get the playground address from telliot-core
-# call the faucet function on the playground contract using the given address
 
-# need function for checking if funding address has enough funds to send to given address
+def check_available_funds() -> bool:
+    """Check if funding acount has enough testnet Goerli TRB, testnet ETH (Goerli), & testnet MATIC."""
+    raise NotImplementedError
 
 
 def get_playground_contract_info(chain_id: int) -> Optional[ContractInfo]:
@@ -32,9 +31,16 @@ def get_playground_contract_info(chain_id: int) -> Optional[ContractInfo]:
 
 def get_rpc_endpoint(chain_id: int) -> Optional[RPCEndpoint]:
     """Get RPC endpoint for given chain id."""
+    if chain_id == 80001:
+        url = os.getenv("MUMBAI_NODE_URL")
+    elif chain_id == 5:
+        url = os.getenv("GOERLI_NODE_URL")
+    else:
+        return None
+
     endpoint = RPCEndpoint(
         chain_id = chain_id,
-        url = os.getenv("RPC_URL"),
+        url = url,
     )
     return endpoint
 
@@ -50,7 +56,7 @@ def get_playground_contract(chain_id: int, contract_info: ContractInfo, node: RP
 
 
 
-async def send_tokens(chain_id: int, address: str, log: Callable = logger.error) -> bool:
+async def send_tokens(chain_id: int, address: str, log: Callable = logger.info) -> bool:
     """Send tokens to address on a supported chain."""
     contract_info = get_playground_contract_info(chain_id)
     if not contract_info:
@@ -68,10 +74,15 @@ async def send_tokens(chain_id: int, address: str, log: Callable = logger.error)
         log(f"Unable to instantiate playground contract for chain id: {chain_id}")
         return False
     
-    tx_receipt, status = await contract.write("faucet", address)
+    if chain_id == 80001:
+        tx_receipt, status = await contract.write("faucet", address)
+    elif chain_id == 5:
+        tx_receipt, status = await contract.write("transfer", address, 1000000000000000000)
+
     if not status.ok or not tx_receipt:
         log(f"Unable to send tokens to address: {address} on chain id: {chain_id}")
         return False
 
     log(f"Sent tokens to address: {address} on chain id: {chain_id}")
+    log(f"Transaction hash: {tx_receipt.transactionHash.hex()}")
     return True
