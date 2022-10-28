@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import sys
 from typing import Optional
 from eth_utils import is_address
-from constants import SUPPORTED_CHAINS
+from faucet.constants import SUPPORTED_CHAINS
 
 load_dotenv()
 
@@ -53,7 +53,7 @@ def parse_mention_text(text: str) -> Optional[tuple]:
         if word.isdigit():
             chain_id = int(word) if int(word) in SUPPORTED_CHAINS else None
 
-    return chain_id, address if chain_id and address else None
+    return chain_id, address
 
 
 def get_networks_and_addresses(mentions: list) -> list:
@@ -61,7 +61,7 @@ def get_networks_and_addresses(mentions: list) -> list:
     networks_and_addresses = []
     for mention in mentions:
         parsed = parse_mention_text(mention.text)
-        if parsed is not None and None not in parsed:
+        if None not in parsed:
             networks_and_addresses.append(parsed)
     
     return networks_and_addresses

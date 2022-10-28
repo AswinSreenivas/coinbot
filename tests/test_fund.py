@@ -32,12 +32,15 @@ def test_get_playground_contract():
     assert "https://" in contract.node.url
 
 
+@pytest.mark.skip("blah")
 @pytest.mark.asyncio
 async def test_send_tokens(caplog):
     """Test send_tokens."""
+    # Test sending on Mumbai
     success = await send_tokens(80001, "0x5134c5a32bf3a492A2007D55E9a98d91C1eCEb6d")
     assert success
 
+    # Test sending on Goerli
     success = await send_tokens(123456789, "0x5134c5a32bf3a492A2007D55E9a98d91C1eCEb6d")
     assert not success
     assert "No playground contract info found for chain id: 123456789" in caplog.text
