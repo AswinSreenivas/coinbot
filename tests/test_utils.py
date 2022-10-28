@@ -15,6 +15,6 @@ async def test_fetch_gas_price(caplog):
     assert isinstance(gp, int)
     assert gp > 0
 
-    gp = await fetch_gas_price(123456789)
-    assert gp is None
-    assert "Unsupported chain id: 123456789" in caplog.text
+    with pytest.raises(ValueError):
+        await fetch_gas_price(123456789)
+        assert "Unsupported chain id: 123456789" in caplog.text
