@@ -64,7 +64,7 @@ async def check_available_funds(account: str, chain_id: int, log: Callable, aler
     Returns True if account has enough funds to cover gas price times
     the estimated gas for a transfer transaction. Otherwise, returns False.
     """
-    enough_native_token = check_native_token_funds(account=account, chain_id=chain_id)
+    enough_native_token = check_native_token_funds(account=account)
 
     if not enough_native_token:
         symbol = get_native_token_symbol(chain_id=chain_id)
@@ -81,4 +81,31 @@ async def check_available_funds(account: str, chain_id: int, log: Callable, aler
             alert(msg)
             return False
     
+    return True
+
+
+async def check_native_token_funds(account: str) -> bool:
+    """Check if funding account has enough native token."""
+    try:
+        balance = await web3.eth.get_balance(account)
+    except Exception as e:
+        logger.error(f"Error fetching native token balance: {e}")
+        return False
+    
+    if balance < 1e18:
+        return False
+    return True
+
+
+async def check_trb_funds(account: str, chain_id: int) -> bool:
+    """Check if funding account has enough TRB."""
+    try:
+        trb_contract = web3.eth.contract(address=TRB_ADDRESS, abi=TRB_ABI)
+        balance = trb_contract.functions.balanceOf(account).call()
+    except Exception as e:
+        logger.error(f"Error fetching TRB balance: {e}")
+        return False
+    
+    if balance < 1e18:
+        return False
     return True

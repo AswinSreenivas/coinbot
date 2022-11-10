@@ -12,3 +12,5 @@ SUPPORTED_CHAINS = {
 
 # Chains that do not use Playground faucet to distribute TRB
 NO_FAUCET_TRB = {5}
+
+

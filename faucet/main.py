@@ -8,7 +8,7 @@ from scrape import get_networks_and_addresses, get_mentions, TWEEPY_API
 from fund import send_tokens
 
 
-def run():
+def scrape_and_fund():
     """Check for faucet requests and send tokens."""
     funded = {}
     checked_mentions = set()
@@ -44,4 +44,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    scrape_and_fund()
