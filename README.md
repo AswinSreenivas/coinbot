@@ -13,11 +13,12 @@ mention @trb-faucet on twitter with a network &amp; address, then receive test T
 
 *The account you're using to fund faucet tweet requests must have testnet MATIC, testnet ETH (Goerli), and the special TRB on Goerli (not generated from Playground contract faucet function.*
 
+Goerli TRB token address: `0x51c59c6cAd28ce3693977F2feB4CfAebec30d8a2`
+
 # Run
 - `python faucet/main.py`
 
-
-
-# TODO
-- [ ] need function for checking if funding address has enough funds to send to given address
-- [ ] send goerli test eth using transfer, not faucet
+# Next steps
+- [ ] add tests
+- [ ] deploy
+- [ ] support more testnets
