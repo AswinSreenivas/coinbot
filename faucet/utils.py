@@ -1,14 +1,20 @@
 """
 Retrieve gas price source based on chain id
 """
-from typing import Callable, Optional
+import os
+from typing import Optional
 import requests
 from telliot_core.gas.legacy_gas import ethgasstation
 from web3 import Web3
+from telliot_core.directory import contract_directory
+from telliot_core.directory import ContractInfo
+from telliot_core.contract.contract import Contract
+from telliot_core.model.endpoints import RPCEndpoint
+from chained_accounts import ChainedAccount
 
 from logging import Logger
 
-from faucet.constants import SUPPORTED_CHAINS, NO_FAUCET_TRB, TRB_ADDRESS, TRB_ABI
+from faucet.constants import SUPPORTED_CHAINS
 from faucet.fund import get_rpc_endpoint
 
 
@@ -63,60 +69,39 @@ def get_native_token_symbol(chain_id: int) -> str:
         raise ValueError(f"Unsupported chain id: {chain_id}")
 
 
-async def check_available_funds(account: str, chain_id: int, log: Callable, alert: Callable) -> bool:
-    """
-    Check if funding acount has enough testnet Goerli TRB, ETH (Goerli), & testnet MATIC.
-
-    Returns True if account has enough funds to cover gas price times
-    the estimated gas for a transfer transaction. Otherwise, returns False.
-    """
-    enough_native_token = check_native_token_funds(account=account, chain_id=chain_id)
-
-    if not enough_native_token:
-        symbol = get_native_token_symbol(chain_id=chain_id)
-        msg = f"Funding account {account} has insufficient {symbol}"
-        log(msg)
-        alert(msg)
-        return False
-    
-    if chain_id in NO_FAUCET_TRB:
-        enough_trb = check_trb_funds(account=account, chain_id=chain_id)
-        if not enough_trb:
-            msg = f"Funding account {account} has insufficient TRB"
-            log(msg)
-            alert(msg)
-            return False
-    
-    return True
+def get_contract_info(chain_id: int) -> Optional[ContractInfo]:
+    """Get TRB token contract or playground contract info based on chain id."""
+    if chain_id == 80001:
+        contract_info = contract_directory.find(name="playground", chain_id=chain_id)
+    elif chain_id == 5:
+        contract_info = contract_directory.find(name="trb-token", chain_id=chain_id)
+    else:
+        raise ValueError(f"Unsupported chain id: {chain_id}")
+    return contract_info[0] if contract_info else None
 
 
-async def check_native_token_funds(account: str, chain_id: int) -> bool:
-    """Check if funding account has enough native token."""
-    try:
-        if chain_id == 80001:
-            balance = await ENDPOINT_MUMBAI.eth.get_balance(account)
-        elif chain_id == 5:
-            balance = await ENDPOINT_GOERLI.eth.get_balance(account)
-        else:
-            raise ValueError(f"Unsupported chain id: {chain_id}")
-    except Exception as e:
-        logger.error(f"Error fetching native token balance: {e}")
-        return False
-    
-    if balance < 1e18:
-        return False
-    return True
+def get_rpc_endpoint(chain_id: int) -> Optional[RPCEndpoint]:
+    """Get RPC endpoint for given chain id."""
+    if chain_id == 80001:
+        url = os.getenv("MUMBAI_NODE_URL")
+    elif chain_id == 5:
+        url = os.getenv("GOERLI_NODE_URL")
+    else:
+        return None
+
+    endpoint = RPCEndpoint(
+        chain_id = chain_id,
+        url = url,
+    )
+    return endpoint
 
 
-async def check_trb_funds(account: str, chain_id: int) -> bool:
-    """Check if funding account has enough TRB."""
-    try:
-        trb_contract = ENDPOINT_GOERLI.eth.contract(address=TRB_ADDRESS, abi=TRB_ABI)
-        balance = trb_contract.functions.balanceOf(account).call()
-    except Exception as e:
-        logger.error(f"Error fetching TRB balance: {e}")
-        return False
-    
-    if balance < 1e18:
-        return False
-    return True
+def get_contract(chain_id: int, contract_info: ContractInfo, node: RPCEndpoint, account: ChainedAccount) -> Contract:
+    """Get playground contract instance for given chain id."""
+    c = Contract(
+        address = contract_info.address[chain_id],
+        abi = contract_info.get_abi(),
+        node = node,
+        account=account,
+    )
+    return c
