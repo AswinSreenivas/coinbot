@@ -4,13 +4,19 @@ Retrieve gas price source based on chain id
 from typing import Callable, Optional
 import requests
 from telliot_core.gas.legacy_gas import ethgasstation
+from web3 import Web3
 
 from logging import Logger
 
-from faucet.constants import SUPPORTED_CHAINS
+from faucet.constants import SUPPORTED_CHAINS, NO_FAUCET_TRB, TRB_ADDRESS, TRB_ABI
+from faucet.fund import get_rpc_endpoint
 
 
 logger = Logger(__name__)
+
+
+ENDPOINT_MUMBAI = get_rpc_endpoint(80001)
+ENDPOINT_GOERLI = get_rpc_endpoint(5)
 
 
 async def fetch_polygon_gas_price(speed: str = "safeLow") -> Optional[int]:
@@ -64,7 +70,7 @@ async def check_available_funds(account: str, chain_id: int, log: Callable, aler
     Returns True if account has enough funds to cover gas price times
     the estimated gas for a transfer transaction. Otherwise, returns False.
     """
-    enough_native_token = check_native_token_funds(account=account)
+    enough_native_token = check_native_token_funds(account=account, chain_id=chain_id)
 
     if not enough_native_token:
         symbol = get_native_token_symbol(chain_id=chain_id)
@@ -84,10 +90,15 @@ async def check_available_funds(account: str, chain_id: int, log: Callable, aler
     return True
 
 
-async def check_native_token_funds(account: str) -> bool:
+async def check_native_token_funds(account: str, chain_id: int) -> bool:
     """Check if funding account has enough native token."""
     try:
-        balance = await web3.eth.get_balance(account)
+        if chain_id == 80001:
+            balance = await ENDPOINT_MUMBAI.eth.get_balance(account)
+        elif chain_id == 5:
+            balance = await ENDPOINT_GOERLI.eth.get_balance(account)
+        else:
+            raise ValueError(f"Unsupported chain id: {chain_id}")
     except Exception as e:
         logger.error(f"Error fetching native token balance: {e}")
         return False
@@ -100,7 +111,7 @@ async def check_native_token_funds(account: str) -> bool:
 async def check_trb_funds(account: str, chain_id: int) -> bool:
     """Check if funding account has enough TRB."""
     try:
-        trb_contract = web3.eth.contract(address=TRB_ADDRESS, abi=TRB_ABI)
+        trb_contract = ENDPOINT_GOERLI.eth.contract(address=TRB_ADDRESS, abi=TRB_ABI)
         balance = trb_contract.functions.balanceOf(account).call()
     except Exception as e:
         logger.error(f"Error fetching TRB balance: {e}")
