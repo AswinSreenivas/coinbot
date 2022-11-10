@@ -10,6 +10,7 @@ from telliot_core.directory import contract_directory
 from telliot_core.directory import ContractInfo
 from telliot_core.contract.contract import Contract
 from telliot_core.model.endpoints import RPCEndpoint, EndpointList
+from chained_accounts import ChainedAccount
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,7 +26,12 @@ def check_available_funds() -> bool:
 
 def get_playground_contract_info(chain_id: int) -> Optional[ContractInfo]:
     """Get playground contract instance for given chain id."""
-    contract_info = contract_directory.find(name="playground", chain_id=chain_id)
+    if chain_id == 80001:
+        contract_info = contract_directory.find(name="playground", chain_id=chain_id)
+    elif chain_id == 5:
+        contract_info = contract_directory.find(name="trb-token", chain_id=chain_id)
+    else:
+        raise ValueError(f"Unsupported chain id: {chain_id}")
     return contract_info[0] if contract_info else None
 
 
@@ -45,12 +51,13 @@ def get_rpc_endpoint(chain_id: int) -> Optional[RPCEndpoint]:
     return endpoint
 
 
-def get_playground_contract(chain_id: int, contract_info: ContractInfo, node: RPCEndpoint) -> Contract:
+def get_playground_contract(chain_id: int, contract_info: ContractInfo, node: RPCEndpoint, account: ChainedAccount) -> Contract:
     """Get playground contract instance for given chain id."""
     c = Contract(
         address = contract_info.address[chain_id],
         abi = contract_info.get_abi(),
         node = node,
+        account=account,
     )
     return c
 
